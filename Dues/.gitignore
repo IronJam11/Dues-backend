@@ -1,0 +1,78 @@
+# Python compiled files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.so
+
+# Virtual environments
+env/
+venv/
+ENV/
+VENV/
+*.env
+*.venv
+*.virtualenv
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+*.sqlite3
+
+# If you're using PostgreSQL:
+pgdata/
+
+# Media and static files:
+media/
+staticfiles/
+static/
+
+# Ignore migrations
+*/migrations/*
+
+# macOS related files:
+.DS_Store
+
+# JetBrains IDEs (PyCharm, etc.)
+.idea/
+*.iml
+
+# VSCode IDE
+.vscode/
+
+# If you're using Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Ignore coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# Ignore specific test output
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Ignore all node_modules if using npm or yarn for frontend
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Docker-related files
+*.log
+docker-compose.yml
+docker-compose.override.yml
+
+# Security and secrets
+secrets.json
+.env
+
+# Pytest cache
+.pytest_cache/
