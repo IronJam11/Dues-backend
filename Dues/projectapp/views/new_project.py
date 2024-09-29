@@ -24,8 +24,14 @@ def createNewProject(request):
         # Assign the current time as time_assigned
         time_assigned = timezone.now()
 
-        # Create roomname dynamically based on name, time_assigned, and deadline
-        roomname_raw = f"{name}-{time_assigned.strftime('%Y%m%d%H%M%S')}-{deadline}"
+        # Remove colons from the deadline (if it is in datetime format) and convert it to a string
+        if isinstance(deadline, datetime.datetime):
+            deadline_str = deadline.strftime('%Y-%m-%dT%H-%M')
+        else:
+            deadline_str = deadline  # If deadline is already a string, use it as is
+
+        # Create roomname dynamically based on name, time_assigned, and cleaned deadline
+        roomname_raw = f"{name}-{time_assigned.strftime('%Y%m%d%H%M%S')}-{deadline_str}"
         roomname = slugify(roomname_raw)  # Slugify the roomname to ensure it conforms to URL standards
 
         # Create the project instance
@@ -50,7 +56,6 @@ def createNewProject(request):
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
