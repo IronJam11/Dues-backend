@@ -47,6 +47,7 @@ def createNewProject(request):
         # Add participants to the project
         participants = User.objects.filter(email__in=participant_emails)
         project.participants.add(*participants)
+        print(project.participants)
 
         # Save the project after adding participants
         project.save()

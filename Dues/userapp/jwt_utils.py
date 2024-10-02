@@ -40,3 +40,34 @@ def check_jwt_token_using_header(request):
         return True
     except AuthenticationFailed:
         return False
+
+
+
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .utils import decode_jwt_token_boolean
+from rest_framework.exceptions import AuthenticationFailed
+
+
+
+class VerifyTokenView(APIView):
+    def get(self, request):
+        # Extract the token from the cookies
+        token = request.COOKIES.get('jwt')  # Adjust the cookie name if necessary
+
+        if not token:
+            return Response({'error': 'Authentication token not found'}, status=400)
+
+        try:
+            # Decode the token and check if it's expired
+            token_details = decode_jwt_token_boolean(token)
+
+            # Return the token details
+            return Response({
+                'enrollmentNo': token_details['enrollmentNo'],
+                'is_token_expired': token_details['is_token_expired'],
+                'token': token_details['token']
+            })
+        except AuthenticationFailed as e:
+            return Response({'error': str(e)}, status=400)
+

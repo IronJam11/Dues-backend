@@ -63,7 +63,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 {
                     'type': 'chat_message',
                     'message': message,
-                    'enrollmentNo': enrollmentNo
+                    'enrollmentNo': enrollmentNo,
+                    'user':enrollmentNo,
                 }
             )
         except Exception as e:
@@ -77,7 +78,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
             'message': message,
-            'enrollmentNo': enrollmentNo
+            'enrollmentNo': enrollmentNo,
+            'user':enrollmentNo
         }))
         print(f"Sent message: {message} to WebSocket for user: {enrollmentNo}")
 
@@ -97,8 +99,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             user = User.objects.get(enrollmentNo=int(enrollmentNo))
             
             # Store message in Redis
+            print(enrollmentNo)
             message = {
-                'user': user.username,  # Use username or another identifying field
+                'user': enrollmentNo,  # Use username or another identifying field
                 'content': content,
                 'timestamp': time.time()
             }

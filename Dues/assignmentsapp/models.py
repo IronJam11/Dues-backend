@@ -32,33 +32,17 @@ class Submission(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
     points_awarded = models.IntegerField(blank=True, null=True)
     description = models.TextField(default="")
-    time_submitted = models.DateTimeField(auto_now_add=True)  # Automatically set to current time
+    time_submitted = models.DateTimeField(auto_now_add=True) 
+    link = models.URLField(null=True, blank=True)
+    status = models.TextField(default="To be Reviewed")
+    unique_submission_name = models.TextField(blank=True,null=True)
 
-
-    def __str__(self):
-        return f"{self.user.username} - {self.assignment.name}"
-
-class SubmissionFile(models.Model):
-    submission = models.ForeignKey(Submission, related_name='files', on_delete=models.CASCADE)
-    link = models.URLField(blank=True,null=True)
-    file = models.FileField(upload_to='submissions/')  # Store in a specific directory
-
-    def __str__(self):
-        return f"File for {self.submission.user.enrollmentNo}'s submission"
-
-    
-
-class Submission(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
-    points_awarded = models.IntegerField(blank=True, null=True)
-    description = models.TextField(default="")
-    time_submitted = models.DateTimeField(auto_now_add=True)  # Automatically set to current time
+     # Automatically set to current time
     # You don't need to add the files here, as they will be in the related SubmissionFile model
 
     def __str__(self):
         return f"{self.user.username} - {self.assignment.name}"
-
+    
 class SubmissionFile(models.Model):
     submission = models.ForeignKey(Submission, related_name='files', on_delete=models.CASCADE)
     file = models.FileField(upload_to='submissions/')  # Store in a specific directory
@@ -74,6 +58,7 @@ class Iteration(models.Model):
     assignment = models.ForeignKey(Assignment,on_delete=models.CASCADE)
     time_assigned = models.DateTimeField(auto_now_add=True)
     submission = models.ForeignKey(Submission,on_delete=models.CASCADE)
+    status = models.TextField()
 
 class SubTask(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)

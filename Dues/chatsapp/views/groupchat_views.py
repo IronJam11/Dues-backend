@@ -31,16 +31,27 @@ def user_rooms(request, enrollmentNo):
     serializer = RoomSerializer(rooms, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+import json
+
 @require_http_methods(["GET"])
 def get_chat_messages(request, room):
     """Get chat messages for a specific room."""
     messages = redis_instance.lrange(room, 0, -1)
+    
+    # If no messages are found, return an empty array instead of a 404.
     if messages:
         return JsonResponse({
             'room': room,
             'messages': [json.loads(m.decode('utf-8')) for m in reversed(messages)]
         })
-    return JsonResponse({'message': 'No messages found'}, status=404)
+    
+    # Return an empty list for the messages if no messages exist yet.
+    return JsonResponse({
+        'room': room,
+        'messages': []
+    }, status=200)
 
 @require_http_methods(["DELETE"])
 @csrf_exempt

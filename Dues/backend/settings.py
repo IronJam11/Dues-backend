@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+from corsheaders.defaults import default_headers
 
 
 # Quick-start development settings - unsuitable for production
@@ -184,3 +185,10 @@ CORS_ALLOW_METHODS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5174",  # Add your frontend URL
+]
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'X-CSRF-TOKEN',
+]
