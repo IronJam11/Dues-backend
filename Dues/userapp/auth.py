@@ -1,141 +1,153 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-import os
-import requests
 from django.shortcuts import redirect
-from rest_framework.authentication import SessionAuthentication
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout
 from userapp.models import User
 from userapp.serializers import UserSerializer
+from django.conf import settings
+import requests
+import jwt
+import datetime
+from rest_framework import status
+from django.http import JsonResponse
 
-
-
+# OAuth2 settings
 client_id = "Ql6I4IgAMGQo1upboRMXGbTcyP6w1WPfkTNaiayy"
 client_secret = "OtelF9pdlZAF3BhK95fBpkE2H0SJv7plXcpDPJotdWLFhMxOR4HRN6OsE1eeb4wJDbABEqdVTkr1WxA29xvGFjwYjtDhuI6djBhxKbZx6YtbFv2dgBEaSpeh2XWSdjwq"
-redirect_uri = 'http://localhost:8000/users/homepage/'
+redirect_uri = 'http://localhost:5173/homepage'
 success_string1 = 'yay'
 request_token_url = 'https://channeli.in/open_auth/token/'
 request_data_url = 'https://channeli.in/open_auth/get_user_data/'
 
-
-params = {'client_id': client_id,
-        'client_secret': client_secret, 
-        'grant_type': 'authorization_code',
-        'code': '' ,
-        'redirect_uri' : redirect_uri,
-        'state': success_string1}
+# OAuth2 parameters
+params = {
+    'client_id': client_id,
+    'client_secret': client_secret,
+    'grant_type': 'authorization_code',
+    'code': '',
+    'redirect_uri': redirect_uri,
+    'state': success_string1
+}
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from rest_framework.exceptions import AuthenticationFailed
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 class RequestAccessAPI(APIView):
+    """
+    API to redirect the user to the OAuth authorization page.
+    """
     def get(self, request):
-        print("Hello")
-        URL= 'https://channeli.in/oauth/authorise' + "?client_id=" + client_id + "&redirect_uri=" + redirect_uri + "&state=" + success_string1
-        return redirect(URL)
+        auth_url = f"https://channeli.in/oauth/authorise?client_id={client_id}&redirect_uri={redirect_uri}&state={success_string1}"
+        return redirect(auth_url)
+
 
 class CallbackAPI(APIView):
-    
     def get(self, request):
-        print("hello")
-        print("We have the code(user has given permission)")
-        AUTH_CODE = request.GET.get("code")
-
-        if AUTH_CODE is None:
+        auth_code = request.GET.get("code")
+        if auth_code is None:
             return Response("Authorization code is missing", status=400)
 
-        params['code'] = AUTH_CODE
-        r = requests.post(request_token_url, data=params)
+        # Exchange the authorization code for an access token
+        params = {
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'grant_type': 'authorization_code',
+            'code': auth_code,
+            'redirect_uri': redirect_uri,
+            'state': success_string1
+        }
+        token_response = requests.post(request_token_url, data=params)
 
-        # Check if the response was successful
-        if r.status_code != 200:
+        if token_response.status_code != 200:
             return Response("Failed to obtain access token", status=400)
 
-        response_data = r.json()
+        response_data = token_response.json()
         access_token = response_data.get('access_token')
         refresh_token = response_data.get('refresh_token')
 
-        if access_token is None:
+        if not access_token:
             return Response("Access token is missing in the response", status=400)
 
-        print(access_token)
-        print(refresh_token)
+        # Fetch user data using the access token
+        headers = {"Authorization": f"Bearer {access_token}"}
+        user_data_response = requests.get(request_data_url, headers=headers)
 
-        # We have the access token and now will get the user information from it
-        header = {
-            "Authorization": "Bearer " + access_token,
-        }
-        
-        r = requests.get(url=request_data_url, headers=header)
-
-        # Check if the user data request was successful
-        if r.status_code != 200:
+        if user_data_response.status_code != 200:
             return Response("Failed to get user data", status=400)
 
-        data = r.json()
+        user_data = user_data_response.json()
+        enrollment_no = user_data.get('username')
+        username = user_data['person'].get('fullName')
+        email = user_data['contactInformation'].get('emailAddress')
 
-        # verifying that the logged in user is from IMG and if yes then adding to our user database is not already
-        enrollment_no = data.get('username')
-        if enrollment_no is None:
-            return Response("Enrollment number is missing in user data", status=400)
+        # Check if the user exists or create a new one
+        user, created = User.objects.get_or_create(enrollmentNo=enrollment_no, defaults={'email': email})
 
-        username = data['person'].get('fullName')
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
 
-        # Uncomment this section to handle user creation and login
-        # if User.objects.filter(enrollment_no=enrollment_no).exists():
-        #     # means that user already exists
-        #     print("User already exists, so logging in the user")
-        #     user = User.objects.get(enrollment_no=enrollment_no)
-        #     try:
-        #         login(request=request, user=user)
-        #         print("Successful login for ")
-        #         print(request.user)
-        #         return redirect("http://localhost:5173/document")
-        #     except Exception as e:
-        #         return Response("Unable to login", status=500)
-        # else:
-        #     print("User does not exist hence now adding user")
-        #     user = User.objects.create(username=username, enrollment_no=enrollment_no)
-        #     print(user)
-        #     try:
-        #         login(request, user)
-        #         print("Successful login for ", request.user)
-        #         return redirect("http://localhost:5173/document", user)
-        #     except:
-        #         return Response("Unable to log in", status=500)
-
-        print(enrollment_no)
-         
-
-        # Add a final return statement to avoid returning None
-        return Response({"status": "User data processed", "enrollment_no": enrollment_no}, status=200)
+        # Redirect to frontend with tokens as query params
+        frontend_redirect_url = f"http://localhost:5173/loading?access-token={access_token}&refresh-token={refresh_token}"
+        return redirect(frontend_redirect_url)
+    
 
 
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth import logout
-import jwt
-import logging
 
-# Set up logging
 
-class LogoutUser(APIView):
-    # permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+class CallbackAPIDetails(APIView):
+    def get(self, request):
+        auth_code = request.GET.get('code')
+        if auth_code is None:
+            return Response("Authorization code is missing", status=400)
 
-    def post(self, request):
-        token = request.COOKIES.get('jwt')  # Get the JWT from cookies
+        # Exchange the authorization code for an access token
+        params = {
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'grant_type': 'authorization_code',
+            'code': auth_code,
+            'redirect_uri': redirect_uri,
+            'state': success_string1
+        }
+        token_response = requests.post(request_token_url, data=params)
 
-        # Log the token before deletion
-        print(f"Token before deletion: {token}")
+        if token_response.status_code != 200:
+            return Response("Failed to obtain access token", status=400)
 
-        # Log the user out
-        # logout(request)  # Log the user out
+        response_data = token_response.json()
+        access_token_initial = response_data.get('access_token')
+        refresh_token_intitial  = response_data.get('refresh_token')
+
+        if not access_token_initial:
+            return Response("Access token is missing in the response", status=400)
+
+        # Fetch user data using the access token
+        headers = {"Authorization": f"Bearer {access_token_initial}"}
+        user_data_response = requests.get(request_data_url, headers=headers)
+
+        if user_data_response.status_code != 200:
+            return Response("Failed to get user data", status=400)
+
+        user_data = user_data_response.json()
+        enrollment_no = user_data.get('username')
+        username = user_data['person'].get('fullName')
+        email = user_data['contactInformation'].get('emailAddress')
+
+        # Check if the user exists or create a new one
+        user, created = User.objects.get_or_create(enrollmentNo=enrollment_no, defaults={'email': email})
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        # Redirect to frontend with tokens as query params
         
-        # Prepare response
-        response = Response({"message": "Logout was successful."})
-        
-        # Delete the JWT cookie
-        response.delete_cookie('jwt')
-        response.set_cookie('jwt', '', max_age=0, httponly=True, secure=True, samesite='Strict')
-
-        # Log that the token has been deleted
-        print("Token deleted.")
-
-        return response
+        return JsonResponse({
+            'accessToken': access_token,
+            'refreshToken':refresh_token
+        })

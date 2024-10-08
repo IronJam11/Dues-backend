@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from datetime import timedelta 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 from corsheaders.defaults import default_headers
@@ -40,8 +41,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework_simplejwt.token_blacklist',
+
+    # 'allauth',
+    # 'allauth.account',
+    # 'allauth.socialaccount',
+    # 'allauth.socialaccount.providers.google'
+
     'rest_framework',
     'corsheaders',
+
     'userapp',
     'tagsapp',
     'assignmentsapp',
@@ -116,7 +125,7 @@ DATABASES ={
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -149,6 +158,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Set your access token lifetime
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Set your refresh token lifetime
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
 
 LANGUAGE_CODE = 'en-us'
 
@@ -157,6 +174,15 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+REST_FRAMEWORK = {
+    
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+  
+}
 
 
 # Static files (CSS, JavaScript, Images)
@@ -186,9 +212,67 @@ CORS_ALLOW_METHODS = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5174",  # Add your frontend URL
+    "http://localhost:5173", 
+    'http://127.0.0.1:5173', # Add your frontend URL
+]
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',  # Your frontend URL
+    'http://127.0.0.1:5173',
+]
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'Authorization1',
+    'Authorization2'
+    'authorization2',
+    'Authorization',
+]
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
+
+# AUTHENTICATION_BACKENDS = [
+#     'django.contrib.auth.backends.ModelBackend',
+#     'allauth.account.auth_backends.AuthenticationBackend'
+# ]
+
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         'SCOPE' : [
+#             'profile',
+#             'email'
+#         ],
+#         'APP': {
+#             'client_id': os.environ['CLIENT_ID'],
+#             'secret': os.environ['CLIENT_SECRET'],
+#         },
+#         'AUTH_PARAMS': {
+#             'access_type':'online',
+#         }
+#     }
+# }
+# SITE_ID = 2
+
+# LOGIN_REDIRECT_URL = '/'
+# LOGOUT_REDIRECT_URL = '/'
+# AIzaSyCxsGfZ3zTEb9ySrrrdO7zh1A1Zk96dobc
+
+ACCOUNT_EMAIL_VERIFICATION = "none"
+
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
+
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+    'x-csrftoken',
 ]
 
-CORS_ALLOW_HEADERS = list(default_headers) + [
-    'X-CSRF-TOKEN',
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
 ]

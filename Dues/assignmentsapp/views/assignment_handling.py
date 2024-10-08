@@ -2,27 +2,32 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from userapp.models import User
 from assignmentsapp.models import Assignment
-from userapp.utils import decode_jwt_token
-from rest_framework.exceptions import AuthenticationFailed
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
+from userapp.utils import get_enrollment_no_from_token
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 
-def get_user_assignments_reviewee(request):
-    if request.method == 'GET':
-        try:
-            # Decode the JWT token to get the payload
-            payload = decode_jwt_token(request)
-            enrollmentNo = payload.get('enrollmentNo')  # Get enrollmentNo from JWT payload
-        except AuthenticationFailed as e:
-            return JsonResponse({"error": str(e)}, status=400)
+class GetUserAssignmentsRevieweeView(APIView):
+    def get(self, request):
+        auth_header = request.headers.get('Authorization')
 
-        # Fetch the user based on the enrollment number from the decoded token
-        user = get_object_or_404(User, enrollmentNo=enrollmentNo)
 
-        # Fetch assignments where the user is a reviewee
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return Response({"error": "Token not provided or incorrect format"}, status=status.HTTP_400_BAD_REQUEST)
+
+        token = auth_header.split(' ')[1]  # Get the token part after 'Bearer'
+        print("token",token)
+
+        enrollment_no_or_error = get_enrollment_no_from_token(token)
+        if isinstance(enrollment_no_or_error, dict):  # Check if it's an error dictionary
+            return Response(enrollment_no_or_error, status=status.HTTP_400_BAD_REQUEST)
+
+        enrollment_no = enrollment_no_or_error  # Extract enrollmentNo
+
+        user = get_object_or_404(User, enrollmentNo=enrollment_no)
+
         assignments_as_reviewee = Assignment.objects.filter(reviewees=user)
 
-        # Create a list of assignments data to return as JSON
         assignments_data = [
             {
                 'name': assignment.name,
@@ -36,25 +41,27 @@ def get_user_assignments_reviewee(request):
             for assignment in assignments_as_reviewee
         ]
 
-        # Return the assignments data as JSON
-        return JsonResponse({'assignments': assignments_data})
+        return Response({'assignments': assignments_data})
 
-def get_user_assignments_reviewer(request):
-    if request.method == 'GET':
-        try:
-            # Decode the JWT token to get the payload
-            payload = decode_jwt_token(request)
-            enrollmentNo = payload.get('enrollmentNo')  # Get enrollmentNo from JWT payload
-        except AuthenticationFailed as e:
-            return JsonResponse({"error": str(e)}, status=400)
+class GetUserAssignmentsReviewerView(APIView):
+    def get(self, request):
+        auth_header = request.headers.get('Authorization')
 
-        # Fetch the user based on the enrollment number from the decoded token
-        user = get_object_or_404(User, enrollmentNo=enrollmentNo)
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return Response({"error": "Token not provided or incorrect format"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch assignments where the user is a reviewer
+        token = auth_header.split(' ')[1]  # Get the token part after 'Bearer'
+
+        enrollment_no_or_error = get_enrollment_no_from_token(token)
+        if isinstance(enrollment_no_or_error, dict):  # Check if it's an error dictionary
+            return Response(enrollment_no_or_error, status=status.HTTP_400_BAD_REQUEST)
+
+        enrollment_no = enrollment_no_or_error  # Extract enrollmentNo
+
+        user = get_object_or_404(User, enrollmentNo=enrollment_no)
+
         assignments_as_reviewer = Assignment.objects.filter(reviewers=user)
 
-        # Create a list of assignments data to return as JSON
         assignments_data = [
             {
                 'name': assignment.name,
@@ -68,17 +75,4 @@ def get_user_assignments_reviewer(request):
             for assignment in assignments_as_reviewer
         ]
 
-        # Return the assignments data as JSON
-        return JsonResponse({'assignments': assignments_data})
-
-@csrf_exempt
-def delete_assignment(request, unique_assignment_name):
-    if request.method == 'DELETE':
-        try:
-            assignment = get_object_or_404(Assignment, unique_name=unique_assignment_name)
-            assignment.delete()
-            return JsonResponse({'message': 'Assignment deleted successfully!'}, status=200)
-        except Assignment.DoesNotExist:
-            return JsonResponse({'error': 'Assignment not found'}, status=404)
-    else:
-        return HttpResponse(status=405)  # Method not allowed if not DELETE
+        return Response({'assignments': assignments_data})

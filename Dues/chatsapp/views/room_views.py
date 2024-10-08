@@ -7,11 +7,23 @@ from rest_framework import status
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from projectapp.models import Project
-
+from userapp.utils import decode_jwt_token
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import AuthenticationFailed
 @api_view(['POST'])
 def isRoomAdmin(request):
+
     slug = request.data.get('slug')
-    room = Room.objects.get(slug=slug)
+
+    print(slug)
+   
+    room = get_object_or_404(Room,slug=slug)
+    print(room)
     enrollmentNo = request.data.get('enrollmentNo')
     user = User.objects.get(enrollmentNo = enrollmentNo)
     if user in room.admins.all():
@@ -22,18 +34,23 @@ def isRoomAdmin(request):
 @api_view(['POST'])
 def create_room(request):
     try:
-        # Extract data from the request
+        # Decode the JWT token to get the admin's enrollmentNo
+        try:
+            payload = decode_jwt_token(request)  # Assuming you have this utility function for JWT decoding
+            admin_enrollmentNo = payload.get('enrollmentNo')
+        except AuthenticationFailed as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+        # Extract other data from the request
         room_name = request.data.get('room_name')
         participant_emails = request.data.get('participant_emails', [])
-        admin_enrollmentNos = request.data.get('admin_enrollmentNos')
         late_joiner_emails = request.data.get('late_joiner_emails', [])
         room_type = request.data.get('type')
         slug  = request.data.get('slug')
 
-
         # Debugging output
         print(f"Room Name: {room_name}")
-        print(f"Admin EnrollmentNo: {admin_enrollmentNos}")
+        print(f"Admin EnrollmentNo: {admin_enrollmentNo}")
         print(f"Participants: {participant_emails}")
         print(f"Late Joiners: {late_joiner_emails}")
         print(f"Room Type: {room_type}")
@@ -42,8 +59,8 @@ def create_room(request):
         if not room_name or not room_type:
             return Response({"error": "Room name and type are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get the admin user (ensure it's fetched correctly)
-        admin = User.objects.get(enrollmentNo=admin_enrollmentNos)
+        # Get the admin user by enrollmentNo from the decoded JWT token
+        admin = User.objects.get(enrollmentNo=admin_enrollmentNo)
         if not admin:
             return Response({"error": "Admin user not found."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -60,7 +77,7 @@ def create_room(request):
             room_name=room_name,
             time_created=timezone.now(),
             type=room_type,
-            slug = slug,
+            slug=slug,
         )
 
         # Add participants, admin, and late joiners
@@ -77,6 +94,7 @@ def create_room(request):
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['GET'])
@@ -121,16 +139,13 @@ from rest_framework.decorators import api_view
 
 @api_view(["POST"])
 def remove_user_from_room(request):
-    """
-    Remove a user from a room based on the room slug and user's email.
-    The initiator is identified by enrollmentNo and must be an admin.
-    The target user is removed from participants, late_joiners, and admins.
-    """
     try:
-        # Extract enrollmentNo of the initiator and email of the target user from the POST request data
         initiator_enrollment_no = request.data.get('enrollmentNo')
         target_email = request.data.get('email')
         room_slug = request.data.get('slug')
+        print(initiator_enrollment_no)
+        print(target_email)
+        print(room_slug)
 
         # Validate required fields
         if not initiator_enrollment_no:
@@ -141,17 +156,27 @@ def remove_user_from_room(request):
 
         # Get the room by its slug
         room = get_object_or_404(Room, slug=room_slug)
+        print(room)
+
+        # Debug: Print all the admins of the room
+        admins = room.admins.all()
+    
+        print(f"Admins of the room {room.room_name}: {[admin.enrollmentNo for admin in admins]}")
 
         # Get the initiator by enrollmentNo
         initiator = get_object_or_404(User, enrollmentNo=initiator_enrollment_no)
-        print(initiator.enrollmentNo)
+        print(f"Initiator: {initiator.enrollmentNo}")
 
         # Check if the initiator is an admin of the room
-        if initiator not in room.admins.all():
-            return JsonResponse({'error': 'You do not have permission to remove users from this room as you are not an admin.'}, status=403)
+        # if initiator not in room.admins.all():
+        #     return JsonResponse({'error': 'You do not have permission to remove users from this room as you are not an admin.'}, status=403)
 
         # Get the target user by email
-        target_user = get_object_or_404(User, email=target_email)
+        print("0----0")
+        target_user = get_object_or_404(User, enrollmentNo = initiator_enrollment_no )
+        print(target_email)
+        print("0----0")
+        print(target_user.enrollmentNo)
 
         # Remove the target user from participants, late_joiners, and admins if they exist
         removed_from = []
@@ -179,6 +204,7 @@ def remove_user_from_room(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
 
 
 

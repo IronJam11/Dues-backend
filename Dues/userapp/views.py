@@ -19,6 +19,8 @@ class Register(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=201)
+
+
 import jwt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -82,7 +84,15 @@ def get_credentials(request):
     
 
 # Login View
-# Login View
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.exceptions import AuthenticationFailed
+from django.contrib.auth import login
+from django.conf import settings
+import jwt
+import datetime
+from .serializers import UserSerializer
+
 class Login(APIView):
     def post(self, request):
         email = request.data.get('email')
@@ -96,28 +106,39 @@ class Login(APIView):
 
         payload = {
             'id': user.id,
-            'enrollmentNo': user.enrollmentNo,  # Add enrollmentNo to the payload
+            'enrollmentNo': user.enrollmentNo,
             'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
             'iat': datetime.datetime.utcnow()
         }
 
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')  # Use the secret key from settings
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+
         response = Response()
-        response.set_cookie(
-            key='jwt', 
-            value=token, 
-            httponly=True, 
-            samesite='None', 
-            secure=True  # Ensure to use HTTPS in production
-        )
         
+        # Set the JWT as a cookie
+        response.set_cookie(
+            key='jwtToken',
+            value=token,
+            httponly=True,  # Make it HttpOnly
+            samesite='Lax',  # Adjust based on your requirements
+            secure=True,    # Use secure flag for HTTPS
+            max_age=3600    # Set expiration to 1 hour (60 * 60 seconds)
+        )
+
+        # Log the user in
+        
+
+        # Serialize user data
         serializer = UserSerializer(user)
+        
+        # Set response data
         response.data = {
-            'jwt': token,
+            'message': 'Login successful',
             'email': email,
-            'enrollmentNo': serializer.data['enrollmentNo']
+            'enrollmentNo': serializer.data['enrollmentNo'],
+            'jwt': token
         }
-        login(request, user)
+
         return response
 
 
@@ -140,7 +161,7 @@ from django.conf import settings
 from rest_framework.exceptions import AuthenticationFailed
 
 class LogoutView(APIView):
-    def post(self, request):
+    def get(self, request):
         response = Response()
 
         try:

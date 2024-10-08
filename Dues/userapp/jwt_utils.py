@@ -52,17 +52,22 @@ from rest_framework.exceptions import AuthenticationFailed
 
 class VerifyTokenView(APIView):
     def get(self, request):
-        # Extract the token from the cookies
-        token = request.COOKIES.get('jwt')  # Adjust the cookie name if necessary
+        # Print all cookies in order for debugging purposes
+        cookies = request.COOKIES
+        if cookies:
+            print("Cookies received:")
+            for key, value in sorted(cookies.items()):
+                print(f"{key}: {value}")
+        else:
+            print("No cookies received")
 
+        token = request.COOKIES.get('jwtToken')  # Ensure the cookie name is correct
         if not token:
+            print("Token not found in cookies")
             return Response({'error': 'Authentication token not found'}, status=400)
 
         try:
-            # Decode the token and check if it's expired
             token_details = decode_jwt_token_boolean(token)
-
-            # Return the token details
             return Response({
                 'enrollmentNo': token_details['enrollmentNo'],
                 'is_token_expired': token_details['is_token_expired'],
@@ -70,4 +75,6 @@ class VerifyTokenView(APIView):
             })
         except AuthenticationFailed as e:
             return Response({'error': str(e)}, status=400)
+
+
 

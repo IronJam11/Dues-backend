@@ -2,32 +2,32 @@ from django.conf import settings
 from rest_framework.exceptions import AuthenticationFailed
 import jwt
 from django.middleware.csrf import get_token
+from django.http import JsonResponse
 
 def decode_jwt_token(request):
-    # Get JWT from cookies
-    token = request.COOKIES.get('jwt')
+    # Get all cookies and print them for debugging purposes
+    cookies = request.COOKIES
+    if cookies:
+        print("All cookies received:")
+        for key, value in sorted(cookies.items()):  # Sorting cookies by their keys
+            print(f"{key}: {value}")
+    else:
+        print("No cookies received")
+
+    # Get JWT and CSRF token from cookies
+    token = request.COOKIES.get('jwtToken')
+    csrf = request.COOKIES.get('csrftoken')
+    
+    # Print specific tokens
+    print("CSRF Token:", csrf)
+    print("JWT Token:", token)
+
     if not token:
+        print("No JWT token found")
         raise AuthenticationFailed('JWT token not found.')
 
-    # Fetch the CSRF token from headers
-    # print("hello")
-    # print("hello")
-    # print("hello")
-    # print("hello")
-    # print("hello")
-    # csrf_token = request.META.get('HTTP_X_CSRF_TOKEN')  # CSRF token sent in headers
-    # if not csrf_token:
-    #     raise AuthenticationFailed('CSRF token not found.')
+    print("Proceeding with decoding the token...")
 
-    # # Validate the CSRF token
-    # print("expected:- ")
-    # print(csrf_token)
-    # expected_csrf_token = get_token(request)
-    # print("but:- ")
-    # print(expected_csrf_token)  # Get the CSRF token from the session
-    # if csrf_token != expected_csrf_token:
-    #     raise AuthenticationFailed('Invalid CSRF token.')
-    print("hello")
     try:
         # Decode the token using the secret key
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
@@ -36,6 +36,7 @@ def decode_jwt_token(request):
         raise AuthenticationFailed('Token has expired.')
     except jwt.InvalidTokenError:
         raise AuthenticationFailed('Invalid token.')
+
 
 
 
@@ -89,3 +90,26 @@ def get_user_enrollment_no(request):
         return JsonResponse({"enrollmentNo": enrollmentNo}, safe=False)
     else:
         return JsonResponse({"error": "Invalid request method."}, status=405)
+    
+
+
+import jwt
+from django.conf import settings
+from userapp.models import User
+
+def get_enrollment_no_from_token(token):
+    try:
+        decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        id = decoded_token.get('user_id') 
+        user = User.objects.get(id = id)
+        enrollment_no = user.enrollmentNo # Adjust according to your token's payload structure
+
+        if enrollment_no:
+            return enrollment_no
+        else:
+            return {'error': 'Invalid token: Enrollment number not found'}
+
+    except jwt.ExpiredSignatureError:
+        return {'error': 'Token has expired'}
+    except jwt.DecodeError:
+        return {'error': 'Error decoding token'}
