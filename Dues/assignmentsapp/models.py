@@ -58,9 +58,16 @@ class Iteration(models.Model):
     assignment = models.ForeignKey(Assignment,on_delete=models.CASCADE)
     time_assigned = models.DateTimeField(auto_now_add=True)
     submission = models.ForeignKey(Submission,on_delete=models.CASCADE)
-    status = models.TextField()
 
 class SubTask(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
     attachment = models.FileField(upload_to='attachments/', null=True, blank=True)
     description = models.TextField()
+
+
+class CompletedAssignment(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    assignment = models.ForeignKey(Assignment,on_delete=models.CASCADE)
+    score = models.IntegerField()
+
+
