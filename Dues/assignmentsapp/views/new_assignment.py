@@ -9,6 +9,10 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
+from django.utils.text import slugify
+from django.utils import timezone
+
+
 
 
 
@@ -19,11 +23,17 @@ def create_assignment(request):
         name = request.data.get('name')
         description = request.data.get('description')
         total_points = request.data.get('total_points')
-        time_assigned = request.data.get('time_assigned')
         deadline = request.data.get('deadline')
         reviewers = request.data.get('reviewers', [])
         reviewees = request.data.get('reviewees', [])
-        time_assigned =  timezone.now()
+        time_assigned = timezone.now()
+
+        if not name or not total_points:
+            return Response({"error": "Missing required fields."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate unique_name (slug) using name and time_assigned
+        formatted_time = time_assigned.strftime('%Y-%m-%d-%H-%M-%S')  # Remove colons
+        unique_name = slugify(f"{name}-{formatted_time}")
 
         # Create the assignment
         assignment = Assignment.objects.create(
@@ -32,6 +42,7 @@ def create_assignment(request):
             total_points=total_points,
             time_assigned=time_assigned,
             deadline=deadline,
+            unique_name=unique_name,  # Add unique_name to the Assignment creation
         )
 
         # Add reviewers and reviewees
@@ -40,6 +51,6 @@ def create_assignment(request):
 
         assignment.save()
 
-        return Response({"message": "Assignment created successfully"}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Assignment created successfully", "unique_name": unique_name}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -181,15 +181,8 @@ class LogoutView(APIView):
 # Create User Details View
 @api_view(['POST'])
 def create_user_details(request):
-    try:
-        # Decode the JWT token to get the payload
-        payload = decode_jwt_token(request)
-        enrollmentNo = payload['enrollmentNo']
-        print(enrollmentNo)  # Get enrollmentNo from JWT payload
-    except AuthenticationFailed as e:
-        
-        return Response({"error": str(e)}, status=400)
-
+    
+    enrollmentNo = request.data.get('enrollmentNo')
     name = request.data.get('name')
     alias = request.data.get('alias')
     year = request.data.get('year')

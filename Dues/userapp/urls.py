@@ -6,7 +6,7 @@ from .edit_views import update_user_details
 from .jwt_utils import VerifyTokenView
 from .utils import get_user_enrollment_no
 from userapp.user_views.login_views import LoginView, LogoutView
-from userapp.user_views.userDetails_views import GetUserFromTokenView
+from userapp.user_views.userDetails_views import GetUserFromTokenView, CheckUserDetailsView
 from userapp.user_views.token_auth import TokenCheckView
 
 
@@ -14,12 +14,13 @@ urlpatterns = [
     path('register/', Register.as_view()),
     # path('login/', Login.as_view()),
 
-    path('login2/', create_user_details),
+    path('set-user-details/', create_user_details, name="set_user_details"),
     path('check-user-details/<str:enrollmentNo>/',check_user_details),
 
     path("auth/oauth/", RequestAccessAPI.as_view(), name='login'),
     path("homepage/", CallbackAPI.as_view(), name='home'),
     path("callback/", CallbackAPIDetails.as_view(), name='callback'),
+    path("check-user-details/",CheckUserDetailsView.as_view(), name="check_user_details"),
 
 
 

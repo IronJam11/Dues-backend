@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from userapp.models import User, UserDetails
 from rest_framework.decorators import api_view
+from userapp.user_views.userDetails_views import get_user_from_access_token
+from rest_framework.response import Response
 
 @csrf_exempt
 @api_view(['POST'])
@@ -11,16 +13,18 @@ def update_user_details(request):
     if request.method == 'POST':
         try:
             # Fetch the JWT token from the cookies
-            jwt_cookie = request.COOKIES.get('jwt')
-            if not jwt_cookie:
-                return JsonResponse({'status': 'error', 'message': 'Authentication token not found.'}, status=401)
+            auth_header = request.headers.get('Authorization')
 
-            # Decode the JWT token to extract enrollmentNo
-            payload = jwt.decode(jwt_cookie, settings.SECRET_KEY, algorithms=['HS256'])
-            enrollment_no = payload.get('enrollmentNo')
+            if auth_header is None or not auth_header.startswith('Bearer '):
+                return Response({"error": "Token not provided or incorrect format"}, status=status.HTTP_400_BAD_REQUEST)
+
+            token = auth_header.split(' ')[1]  # Get the token part after 'Bearer'
+            
+            user_details = get_user_from_access_token(token)
+            enrollmentNo = user_details['enrollmentNo']
 
             # Get the user associated with the enrollmentNo
-            user = User.objects.get(enrollmentNo=enrollment_no)
+            user = User.objects.get(enrollmentNo=enrollmentNo)
 
             # Get the associated UserDetails
             user_details = UserDetails.objects.filter(user=user).first()

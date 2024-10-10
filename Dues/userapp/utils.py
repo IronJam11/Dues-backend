@@ -70,26 +70,22 @@ def decode_jwt_token_boolean(token):
         raise AuthenticationFailed('Invalid token')
 
 def get_user_enrollment_no(request):
-    """
-    Retrieves the enrollmentNo of the user based on the JWT token.
-    """
-    if request.method == 'GET':
-        try:
-            # Decode the JWT token to get the payload
-            token = request.COOKIES.get('jwt')  # Assuming the JWT token is stored in cookies
-            payload = decode_jwt_token_boolean(token)  # Decode the token and check for expiry
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Invalid request method. Only GET is allowed.'}, status=405)
 
-            if payload['is_token_expired']:
-                return JsonResponse({"error": "Token has expired."}, status=401)
+    # Get the JWT token from cookies
+    auth_header = request.headers.get('Authorization')
 
-            enrollmentNo = payload.get('enrollmentNo')  # Get enrollmentNo from JWT payload
-        except AuthenticationFailed as e:
-            return JsonResponse({"error": str(e)}, status=400)
 
-        # Return the enrollmentNo as a JSON response
-        return JsonResponse({"enrollmentNo": enrollmentNo}, safe=False)
-    else:
-        return JsonResponse({"error": "Invalid request method."}, status=405)
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return Response({"error": "Token not provided or incorrect format"}, status=status.HTTP_400_BAD_REQUEST)
+
+    token = auth_header.split(' ')[1]  # Get the token part after 'Bearer'
+    print("token",token)
+
+    enrollment_no_or_error = get_enrollment_no_from_token(token)
+
+   
     
 
 

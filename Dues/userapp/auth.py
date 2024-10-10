@@ -96,13 +96,42 @@ class CallbackAPI(APIView):
     
 
 
+import time
+import requests
+from requests.exceptions import Timeout
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.http import JsonResponse
+from rest_framework_simplejwt.tokens import RefreshToken
+from userapp.models import User
 
+# OAuth2 settings
+
+# Retry logic for fetching user data
+def fetch_user_data_with_retries(headers, max_retries=3, delay=2):
+    for attempt in range(max_retries):
+        try:
+            user_data_response = requests.get(request_data_url, headers=headers, timeout=10)
+            if user_data_response.status_code == 200:
+                return user_data_response.json()  # Return user data if successful
+        except Timeout:
+            if attempt < max_retries - 1:
+                time.sleep(delay)  # Wait before retrying
+            else:
+                raise  # If max retries reached, raise the exception
+    return None  # Return None if retries are exhausted
 
 class CallbackAPIDetails(APIView):
-    def get(self, request):
-        auth_code = request.GET.get('code')
+    """
+    API to handle the OAuth2 callback, obtain tokens, and retrieve user details with retry logic.
+    """
+
+    def post(self, request):
+        # Get the authorization code from the request data
+        auth_code = request.data.get('code')
         if auth_code is None:
-            return Response("Authorization code is missing", status=400)
+            return Response({"detail": "Authorization code is missing"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Exchange the authorization code for an access token
         params = {
@@ -113,41 +142,45 @@ class CallbackAPIDetails(APIView):
             'redirect_uri': redirect_uri,
             'state': success_string1
         }
-        token_response = requests.post(request_token_url, data=params)
 
+        token_response = requests.post(request_token_url, data=params)
         if token_response.status_code != 200:
-            return Response("Failed to obtain access token", status=400)
+            return Response({"detail": "Failed to obtain access token"}, status=status.HTTP_400_BAD_REQUEST)
 
         response_data = token_response.json()
         access_token_initial = response_data.get('access_token')
-        refresh_token_intitial  = response_data.get('refresh_token')
+        refresh_token_initial = response_data.get('refresh_token')
 
         if not access_token_initial:
-            return Response("Access token is missing in the response", status=400)
+            return Response({"detail": "Access token is missing in the response"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch user data using the access token
+        # Fetch user data using the access token with retry logic
         headers = {"Authorization": f"Bearer {access_token_initial}"}
-        user_data_response = requests.get(request_data_url, headers=headers)
+        try:
+            user_data = fetch_user_data_with_retries(headers)
+        except Timeout:
+            return Response({"detail": "Channeli API request timed out"}, status=status.HTTP_504_GATEWAY_TIMEOUT)
 
-        if user_data_response.status_code != 200:
-            return Response("Failed to get user data", status=400)
+        if user_data is None:
+            return Response({"detail": "Failed to get user data after multiple attempts"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user_data = user_data_response.json()
+        # Extract user details
         enrollment_no = user_data.get('username')
-        username = user_data['person'].get('fullName')
         email = user_data['contactInformation'].get('emailAddress')
 
         # Check if the user exists or create a new one
-        user, created = User.objects.get_or_create(enrollmentNo=enrollment_no, defaults={'email': email})
+        user, created = User.objects.get_or_create(
+            enrollmentNo=enrollment_no, 
+            defaults={'email': email}
+        )
 
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
         refresh_token = str(refresh)
 
-        # Redirect to frontend with tokens as query params
-        
+        # Return the tokens in JSON format
         return JsonResponse({
             'accessToken': access_token,
-            'refreshToken':refresh_token
+            'refreshToken': refresh_token
         })

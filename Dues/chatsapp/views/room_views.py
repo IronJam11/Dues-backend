@@ -173,7 +173,7 @@ def remove_user_from_room(request):
 
         # Get the target user by email
         print("0----0")
-        target_user = get_object_or_404(User, enrollmentNo = initiator_enrollment_no )
+        target_user = get_object_or_404(User, email = target_email)
         print(target_email)
         print("0----0")
         print(target_user.enrollmentNo)

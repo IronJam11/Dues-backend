@@ -159,7 +159,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Set your access token lifetime
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Set your access token lifetime
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Set your refresh token lifetime
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -211,10 +211,6 @@ CORS_ALLOW_METHODS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173", 
-    'http://127.0.0.1:5173', # Add your frontend URL
-]
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',  # Your frontend URL
     'http://127.0.0.1:5173',
@@ -222,8 +218,6 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'Authorization1',
     'Authorization2'
-    'authorization2',
-    'Authorization',
 ]
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
@@ -258,9 +252,10 @@ CSRF_COOKIE_SECURE = False
 ACCOUNT_EMAIL_VERIFICATION = "none"
 
 SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True  # Ensure this is set for production
 CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True  # Ensure this is set for production
+
 
 CORS_ALLOW_HEADERS = [
     'content-type',
