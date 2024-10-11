@@ -7,6 +7,7 @@ from assignmentsapp.views.review_assignment import submission_detail, ReviewSubm
 from assignmentsapp.views.permission_views import check_assignment_permission
 from assignmentsapp.views.delete_assignment import delete_assignment
 from assignmentsapp.views.iterations_views import GetUserIterations
+from assignmentsapp.views.completed_assignments_views import GetCompletedAssignments
 urlpatterns = [
     path('get-all/reviewee/', GetUserAssignmentsRevieweeView.as_view(), name='get_user_assignments_reviewee'),
     path('get-all/reviewer/', GetUserAssignmentsReviewerView.as_view(), name='get_user_assignments_reviewer'),
@@ -20,5 +21,6 @@ urlpatterns = [
     path('list-my-submissions/<str:unique_name>/',list_my_submissions_all,name="list_all_submissions"),
     path('submission-details/<str:unique_submission_name>/',submission_detail),
     path('review/',ReviewSubmission.as_view(),name="review_submission"),
-    path('iterations/<str:unique_name>/',GetUserIterations.as_view(),name="review_submission")
+    path('iterations/<str:unique_name>/',GetUserIterations.as_view(),name="review_submission"),
+    path('completed-assignments/',GetCompletedAssignments.as_view(),name="get_users_completed_assignments")
 ]

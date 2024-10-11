@@ -1,7 +1,6 @@
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
 from userapp.models import User
-from assignmentsapp.models import Assignment
+from assignmentsapp.models import Assignment, CompletedAssignment
 from userapp.utils import get_enrollment_no_from_token
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,12 +10,11 @@ class GetUserAssignmentsRevieweeView(APIView):
     def get(self, request):
         auth_header = request.headers.get('Authorization')
 
-
         if not auth_header or not auth_header.startswith('Bearer '):
             return Response({"error": "Token not provided or incorrect format"}, status=status.HTTP_400_BAD_REQUEST)
 
         token = auth_header.split(' ')[1]  # Get the token part after 'Bearer'
-        print("token",token)
+        print("token", token)
 
         enrollment_no_or_error = get_enrollment_no_from_token(token)
         if isinstance(enrollment_no_or_error, dict):  # Check if it's an error dictionary
@@ -26,7 +24,10 @@ class GetUserAssignmentsRevieweeView(APIView):
 
         user = get_object_or_404(User, enrollmentNo=enrollment_no)
 
-        assignments_as_reviewee = Assignment.objects.filter(reviewees=user)
+        # Filter assignments for the reviewee and exclude those with a completed assignment by the same user and assignment
+        assignments_as_reviewee = Assignment.objects.filter(reviewees=user).exclude(
+            completedassignment__user=user, completedassignment__assignment__in=Assignment.objects.filter(reviewees=user)
+        )
 
         assignments_data = [
             {
@@ -42,6 +43,7 @@ class GetUserAssignmentsRevieweeView(APIView):
         ]
 
         return Response({'assignments': assignments_data})
+
 
 class GetUserAssignmentsReviewerView(APIView):
     def get(self, request):

@@ -66,8 +66,9 @@ class SubTask(models.Model):
 
 
 class CompletedAssignment(models.Model):
-    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="for_user")
     assignment = models.ForeignKey(Assignment,on_delete=models.CASCADE)
+    reviewed_by = models.ForeignKey(User,null=True,blank=True,on_delete=models.CASCADE,related_name="by_user")
     score = models.IntegerField()
 
 

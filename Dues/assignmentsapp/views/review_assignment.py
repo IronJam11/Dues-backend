@@ -114,7 +114,8 @@ class ReviewSubmission(APIView):
                 CompletedAssignment.objects.create(
                     user=for_user,  # User being reviewed
                     assignment=assignment,
-                    score=points_awarded  # Points provided in the frontend
+                    score=points_awarded, # Points provided in the frontend
+                    reviewed_by = by_user,
                 )
 
             return Response({'success': 'Review and status updated successfully.'}, status=status.HTTP_200_OK)
