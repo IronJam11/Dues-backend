@@ -117,3 +117,72 @@ class CheckUserDetailsView(APIView):
 
         # Return the result as a response
         return Response(user_check_result, status=status.HTTP_200_OK if 'error' not in user_check_result else status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.files.storage import default_storage
+
+
+# Function to get user details by enrollment number
+def get_user_from_enrollment_no(enrollment_no):
+    try:
+        # Fetch the user based on the enrollment number
+        user = User.objects.get(enrollmentNo=enrollment_no)
+        user_detail = UserDetails.objects.filter(user=user).first()
+
+        # Get the profile picture URL if it exists
+        profile_picture_url = default_storage.url(user_detail.profilePicture.name) if user_detail and user_detail.profilePicture else ""
+
+        # Return user details
+        return {
+            'id': user.id,
+            'email': user.email,
+            'enrollmentNo': user.enrollmentNo,
+            'name': user_detail.name if user_detail else None,
+            'alias': user_detail.alias if user_detail else None,
+            'year': user_detail.year if user_detail else None,
+            'isDeveloper': user_detail.isDeveloper if user_detail else False,
+            'profilePicture': profile_picture_url,
+            'is_reviewee': user.is_reviewee,
+            'is_reviewer': user.is_reviewer,
+            'is_admin': user.is_admin,
+        }
+
+    except User.DoesNotExist:
+        return {'error': 'User not found'}
+
+# API view to fetch user details by enrollment number
+class GetUserByEnrollmentNoView(APIView):
+
+    def get(self, request, enrollmentNo, *args, **kwargs):
+        # Fetch user details using enrollment number
+        user_details = get_user_from_enrollment_no(enrollmentNo)
+
+        # If user not found, return a 404 error
+        if 'error' in user_details:
+            return Response(user_details, status=status.HTTP_404_NOT_FOUND)
+
+        # Otherwise, return the user details
+        return Response(user_details, status=status.HTTP_200_OK)
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+
+def delete_user(request, enrollmentNo):
+    try:
+        # Fetch the user by enrollmentNo
+        user = get_object_or_404(User, enrollmentNo=enrollmentNo)
+        
+        # Delete the user
+        user.delete()
+        
+        # Return a success response
+        return JsonResponse({'message': 'User deleted successfully.'}, status=204)
+    except Exception as e:
+        # Handle any potential errors
+        return JsonResponse({'error': str(e)}, status=500)

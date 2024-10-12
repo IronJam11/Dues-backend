@@ -6,7 +6,7 @@ from .edit_views import update_user_details
 from .jwt_utils import VerifyTokenView
 from .utils import get_user_enrollment_no
 from userapp.user_views.login_views import LoginView, LogoutView
-from userapp.user_views.userDetails_views import GetUserFromTokenView, CheckUserDetailsView
+from userapp.user_views.userDetails_views import GetUserFromTokenView, CheckUserDetailsView, GetUserByEnrollmentNoView, delete_user
 from userapp.user_views.token_auth import TokenCheckView
 
 
@@ -31,11 +31,13 @@ urlpatterns = [
     path('change-user-info/',update_user_details),
     path('search/', search_users, name='search_users'),
     path('get-enrollmentNo/', get_user_enrollment_no),
+    path('user-details-enrollmentNo/<str:enrollmentNo>/',GetUserByEnrollmentNoView.as_view(),name="get_user_from_enrollmentNo"),
 
 
     path('login/',LoginView.as_view(),name="login_user"),
     path('logout/', LogoutView.as_view()),
     path('user-data/',GetUserFromTokenView.as_view(),name="user_details"),
     path('check/', TokenCheckView.as_view(), name='token-check'),
+    path('delete/<str:enrollmentNo>/',delete_user,name="delete_user")
     
 ]
