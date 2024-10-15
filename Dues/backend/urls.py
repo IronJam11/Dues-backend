@@ -24,7 +24,9 @@ urlpatterns = [
     path('assignments/',include('assignmentsapp.urls')),
     path('chats/dm/',include('chatsapp.urls.dm_urls')),
     path('projects/',include('projectapp.urls')),
-    path('chats/groupchat/',include('chatsapp.urls.groupchat_urls'))
+    path('chats/groupchat/',include('chatsapp.urls.groupchat_urls')),
+    path('tags/',include('tagsapp.urls'))
+
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

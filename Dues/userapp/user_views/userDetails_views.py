@@ -28,6 +28,7 @@ def get_user_from_access_token(token):
                 'is_reviewee': user.is_reviewee,
                 'is_reviewer': user.is_reviewer,
                 'is_admin': user.is_admin,
+                'streak': user_detail.streak,
             }
         else:
             return {'error': 'Invalid token: User ID not found'}

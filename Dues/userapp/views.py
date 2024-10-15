@@ -250,6 +250,7 @@ def get_all_users(request):
                     'year': user_detail.year,
                     'isDeveloper': user_detail.isDeveloper,
                     'profilePicture': profile_picture_url,
+                    'points': user_detail.points,
                 }
                 user_details.append(details)
 

@@ -2,7 +2,7 @@ from django.urls import path
 from .views import Register,Login,LogoutView,get_credentials
 from .views import create_user_details,check_user_details, get_all_users, get_user, search_users, get_all_users_enrollmentNo, get_all_users_by_email
 from .auth import RequestAccessAPI, CallbackAPI, CallbackAPIDetails
-from .edit_views import update_user_details
+from .edit_views import update_user_details, update_user_details_admin
 from .jwt_utils import VerifyTokenView
 from .utils import get_user_enrollment_no
 from userapp.user_views.login_views import LoginView, LogoutView
@@ -29,6 +29,7 @@ urlpatterns = [
     path('all-users-details-email/',get_all_users_by_email),
     path('user-info/',get_user),
     path('change-user-info/',update_user_details),
+    path('change-user-info-admin/<str:enrollmentNo>/', update_user_details_admin),
     path('search/', search_users, name='search_users'),
     path('get-enrollmentNo/', get_user_enrollment_no),
     path('user-details-enrollmentNo/<str:enrollmentNo>/',GetUserByEnrollmentNoView.as_view(),name="get_user_from_enrollmentNo"),

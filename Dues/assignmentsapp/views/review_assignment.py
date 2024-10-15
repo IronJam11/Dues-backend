@@ -49,7 +49,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from assignmentsapp.models import Iteration, CompletedAssignment, Submission, Assignment
-from userapp.models import User
+from userapp.models import User, UserDetails
 from rest_framework.exceptions import NotFound, ValidationError
 from userapp.utils import get_enrollment_no_from_token
 from django.shortcuts import get_object_or_404
@@ -86,6 +86,8 @@ class ReviewSubmission(APIView):
             
             enrollment_no = enrollment_no_or_error
             by_user = get_object_or_404(User, enrollmentNo=enrollment_no)  # Reviewer
+            user_details = UserDetails.objects.filter(user=for_user).first()
+
 
             # Create the Iteration object for feedback
             iteration = Iteration.objects.create(
@@ -108,8 +110,11 @@ class ReviewSubmission(APIView):
                 points_awarded = int(points)
 
                 if points_awarded < 0 or points_awarded > max_points:
+
                     return Response({
                         'error': f'Points must be between 0 and {max_points}.'}, status=status.HTTP_400_BAD_REQUEST)
+                user_details.points += (10*points_awarded)
+                user_details.save()
 
                 CompletedAssignment.objects.create(
                     user=for_user,  # User being reviewed

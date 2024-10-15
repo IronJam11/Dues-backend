@@ -3,15 +3,16 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from userapp.models import User
+from userapp.models import User, UserActivity, UserDetails
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
-        email= request.data.get('email')
+        email = request.data.get('email')
         password = request.data.get('password')
 
         # Authenticate the user
@@ -20,8 +21,14 @@ class LoginView(APIView):
             raise AuthenticationFailed("User not found")
         if not user.check_password(password):
             raise AuthenticationFailed("Incorrect password!")
+        user_details = UserDetails.objects.filter(user=user).first()
 
-        if user is not None:
+        if user is not None :
+            # Record login time in UserActivity
+            if user_details is not None:
+                user_activity, created = UserActivity.objects.get_or_create(user=user)
+                user_activity.record_login(timezone.now())  # Record login time
+
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
             return Response({

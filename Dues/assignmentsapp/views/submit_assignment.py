@@ -32,6 +32,7 @@ def submit_assignment(request):
     try:
         # Fetch the user by enrollment number
         user = User.objects.get(enrollmentNo=enrollmentNo)
+        user_details = UserDetails.objects.filter(user = user).first()
 
         # Fetch the assignment by its unique name
         assignment = Assignment.objects.get(unique_name=unique_name)
@@ -58,6 +59,11 @@ def submit_assignment(request):
         for file in files:
             SubmissionFile.objects.create(submission=submission, file=file)
             print(file)
+        
+        user_details.points += 5
+        user_details.save()
+        
+
 
         return JsonResponse({'message': 'Submission successful!'}, status=201)
 
@@ -172,6 +178,10 @@ def list_my_submissions_all(request, unique_name):
 
             # Add the serialized submission to the list
             submissions_data.append(submission_data)
+            user_details = UserDetails.objects.filter(user=user).first()
+            user_details.points += 5
+            user_details.save()
+
 
         # Return the serialized data as a JSON response
         return Response({'submissions': submissions_data}, status=status.HTTP_200_OK)
