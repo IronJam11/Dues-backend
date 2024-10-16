@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'assignmentsapp',
     'projectapp',
     'chatsapp',
+    'ideasapp',
 ]
 
 MIDDLEWARE = [

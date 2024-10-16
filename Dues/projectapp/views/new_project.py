@@ -18,8 +18,12 @@ def createNewProject(request):
         description = request.data.get('description')
         group_image = request.FILES.get('group_image')
         deadline = request.data.get('deadline')
-        participant_emails = request.data.get('participant_emails', [])
-        print(participant_emails)
+        participant_emails_str = request.data.get('participant_emails', "")
+        print(f"Initial Participant Emails: {participant_emails_str}")  # Debugging print
+
+        # Split participant emails string by commas to get a list of emails
+        participant_emails = [email.strip() for email in participant_emails_str.split(',')]
+        print(f"Processed Participant Emails: {participant_emails}")  # Debugging print
 
         # Assign the current time as time_assigned
         time_assigned = timezone.now()
@@ -44,10 +48,14 @@ def createNewProject(request):
             roomname=roomname
         )
 
-        # Add participants to the project
-        participants = User.objects.filter(email__in=participant_emails)
-        project.participants.add(*participants)
-        print(project.participants)
+        # Manually filter participants using a for loop
+        for email in participant_emails:
+            # Try to get the user by email; handle the case where the user doesn't exist
+            participant = User.objects.filter(email=email).first()
+            if participant:
+                project.participants.add(participant)
+            else:
+                print(f"User with email {email} not found.")  # Debugging print
 
         # Save the project after adding participants
         project.save()
@@ -57,6 +65,8 @@ def createNewProject(request):
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response

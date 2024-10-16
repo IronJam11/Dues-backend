@@ -15,6 +15,7 @@ from rest_framework import status
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import AuthenticationFailed
+from userapp.utils import get_enrollment_no_from_token
 @api_view(['POST'])
 def isRoomAdmin(request):
 
@@ -35,11 +36,18 @@ def isRoomAdmin(request):
 def create_room(request):
     try:
         # Decode the JWT token to get the admin's enrollmentNo
-        try:
-            payload = decode_jwt_token(request)  # Assuming you have this utility function for JWT decoding
-            admin_enrollmentNo = payload.get('enrollmentNo')
-        except AuthenticationFailed as e:
-            return JsonResponse({"error": str(e)}, status=400)
+        auth_header = request.headers.get('Authorization')
+        if auth_header is None or not auth_header.startswith('Bearer '):
+            return JsonResponse({"error": "Token not provided or incorrect format"}, status=status.HTTP_400_BAD_REQUEST)
+                
+        token = auth_header.split(' ')[1]
+        enrollment_no_or_error = get_enrollment_no_from_token(token)
+        if isinstance(enrollment_no_or_error, dict):  # Check if an error occurred during token decoding
+            return JsonResponse(enrollment_no_or_error, status=status.HTTP_400_BAD_REQUEST)
+                
+        enrollment_no = enrollment_no_or_error
+        admin_enrollmentNo = enrollment_no
+        user = get_object_or_404(User, enrollmentNo=enrollment_no) 
 
         # Extract other data from the request
         room_name = request.data.get('room_name')

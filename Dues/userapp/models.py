@@ -106,7 +106,6 @@ class UserActivity(models.Model):
         return f"Activity of {self.user.email}"
 
     def record_login(self, login_time):
-        """Records the login time for the current day and handles streak logic with 12:00 AM cutoff."""
         user_details = UserDetails.objects.filter(user=self.user).first()
         
         # Ensure login_time is naive (without timezone)

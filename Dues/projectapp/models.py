@@ -21,3 +21,10 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
+
+    # This is the function I mentioned
+    def get_project_assignments(self):
+        """
+        Returns all assignments related to the current project (based on roomname).
+        """
+        return self.assignments.all()
