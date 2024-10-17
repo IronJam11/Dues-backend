@@ -232,15 +232,19 @@ def promote_user_to_admin(request):
         email = request.data.get('email')
         room_slug = request.data.get('slug')
         enrollmentNo = request.data.get('enrollmentNo')
+        print(request.data)
 
         if not email:
             return JsonResponse({'error': 'User email is required.'}, status=400)
 
         # Get the room by its slug
         room = get_object_or_404(Room, slug=room_slug)
+        print("room",room.slug)
 
         # Get the user by email
-        user = get_object_or_404(User, email=email)
+        print(email)
+        user = get_object_or_404(User, enrollmentNo=email)
+        print("email",user.email)
         admin = User.objects.get(enrollmentNo = enrollmentNo)
 
         # Check if the user is already an admin

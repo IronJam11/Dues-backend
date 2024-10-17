@@ -1,5 +1,5 @@
 from django.urls import path
-from .views.assignment_handling import GetUserAssignmentsRevieweeView, GetUserAssignmentsReviewerView
+from .views.assignment_handling import GetUserAssignmentsRevieweeView, GetUserAssignmentsReviewerView, get_assignment_details,edit_assignment_details
 from .views.new_assignment import create_assignment
 from .views.subtasks import create_subtask, get_subtasks_by_assignment
 from assignmentsapp.views.submit_assignment import submit_assignment, list_submissions_all, list_my_submissions_all
@@ -11,7 +11,10 @@ from assignmentsapp.views.completed_assignments_views import GetCompletedAssignm
 urlpatterns = [
     path('get-all/reviewee/', GetUserAssignmentsRevieweeView.as_view(), name='get_user_assignments_reviewee'),
     path('get-all/reviewer/', GetUserAssignmentsReviewerView.as_view(), name='get_user_assignments_reviewer'),
+    path('get-assignment-details/<str:unique_name>/', get_assignment_details, name="create_new_assignment"),
+    path('edit-assignment-details/<str:unique_name>/',edit_assignment_details, name="create_new_assignment"),
     path('create-assignment/', create_assignment, name="create_new_assignment"),
+
     path('check-permission/<str:unique_name>/', check_assignment_permission, name="check_for_permission"),
     path('delete/<str:unique_name>/', delete_assignment, name='delete-assignment'),
     path('subtask/create/',create_subtask,name="new_subtask"),

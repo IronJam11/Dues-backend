@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from ideasapp.models import Idea, Comment
+from userapp.models import UserDetails, User
 
 def all_ideas_view(request):
     """
@@ -28,7 +29,10 @@ def all_ideas_view(request):
             {
                 'id': user.id,
                 'enrollmentNo': user.enrollmentNo,
-                'email': user.email,  # You can include other fields if necessary
+                'email': user.email,
+                'alias' : UserDetails.objects.filter(user=user).first().alias,
+                'name' : UserDetails.objects.filter(user=user).first().name,
+                
             }
             for user in users
         ]

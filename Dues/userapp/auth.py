@@ -46,6 +46,7 @@ class RequestAccessAPI(APIView):
 class CallbackAPI(APIView):
     def get(self, request):
         auth_code = request.GET.get("code")
+        print("hello")
         if auth_code is None:
             return Response("Authorization code is missing", status=400)
 
@@ -59,8 +60,10 @@ class CallbackAPI(APIView):
             'state': success_string1
         }
         token_response = requests.post(request_token_url, data=params)
+        print("Token response",token_response.status_code)
 
         if token_response.status_code != 200:
+            
             return Response("Failed to obtain access token", status=400)
 
         response_data = token_response.json()
@@ -129,6 +132,7 @@ class CallbackAPIDetails(APIView):
 
     def post(self, request):
         # Get the authorization code from the request data
+    
         auth_code = request.data.get('code')
         if auth_code is None:
             return Response({"detail": "Authorization code is missing"}, status=status.HTTP_400_BAD_REQUEST)
@@ -144,6 +148,7 @@ class CallbackAPIDetails(APIView):
         }
 
         token_response = requests.post(request_token_url, data=params)
+        print(token_response)
         if token_response.status_code != 200:
             return Response({"detail": "Failed to obtain access token"}, status=status.HTTP_400_BAD_REQUEST)
 
