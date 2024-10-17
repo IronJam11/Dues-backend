@@ -101,6 +101,7 @@ from django.utils import timezone
 
 class UserActivity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    status = models.TextField(default="Offline")
 
     def __str__(self):
         return f"Activity of {self.user.email}"

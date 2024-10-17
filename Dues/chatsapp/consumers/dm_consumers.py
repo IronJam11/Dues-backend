@@ -16,6 +16,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.enrollmentNo1 = self.scope['url_route']['kwargs']['enrollmentNo1']
         self.enrollmentNo2 = self.scope['url_route']['kwargs']['enrollmentNo2']
+        print("Pookie bear")
 
         # Ensure enrollment numbers are in a consistent order (sorted)
         sorted_enrollment_numbers = sorted([self.enrollmentNo1, self.enrollmentNo2])

@@ -227,16 +227,25 @@ from django.http import JsonResponse
 from django.core.files.storage import default_storage
 from .models import User, UserDetails
 
+from django.core.files.storage import default_storage
+from django.http import JsonResponse
+from userapp.models import User, UserDetails, UserActivity
+
 def get_all_users(request):
     if request.method == 'GET':
-        users = User.objects.all()
+        users = User.objects.all()  # Fetch all users
         user_details = []
 
         for user in users:
             user_detail = UserDetails.objects.filter(user=user).first()
             if user_detail:
+                # Get or create a UserActivity instance for the user
+                user_activity, created = UserActivity.objects.get_or_create(user=user, defaults={'status': 'Offline'})
+
+                # Fetch profile picture URL if available
                 profile_picture_url = default_storage.url(user_detail.profilePicture.name) if user_detail.profilePicture else ""
-                print(profile_picture_url)
+                
+                # Construct the details dictionary including the user activity status
                 details = {
                     'email': user.email,
                     'enrollmentNo': user.enrollmentNo,
@@ -251,11 +260,13 @@ def get_all_users(request):
                     'isDeveloper': user_detail.isDeveloper,
                     'profilePicture': profile_picture_url,
                     'points': user_detail.points,
+                    'status': user_activity.status  # Add the user's activity status
                 }
+
                 user_details.append(details)
 
         return JsonResponse({'users': user_details}, safe=False)
-    
+
 def get_all_users_enrollmentNo(request):
     if request.method == 'GET':
         users = User.objects.all()
