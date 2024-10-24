@@ -6,6 +6,7 @@ from django.conf import settings
 from userapp.models import User, UserDetails
 from django.core.files.storage import default_storage
 
+
 def get_user_from_access_token(token):
     try:
         decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
@@ -152,6 +153,11 @@ def get_user_from_enrollment_no(enrollment_no):
             'is_reviewee': user.is_reviewee,
             'is_reviewer': user.is_reviewer,
             'is_admin': user.is_admin,
+            'streak': user_detail.streak,
+            'date_joined': user.date_joined,
+            'last_login': user.last_login,
+            'points': user_detail.points,
+            
         }
 
     except User.DoesNotExist:

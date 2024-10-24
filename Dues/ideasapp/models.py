@@ -8,7 +8,7 @@ class Idea(models.Model):
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
-        ('in_progress', 'In Progress'),
+        ('on hold', 'On Hold'),
         ('implemented', 'Implemented'),
     ]
 
@@ -22,6 +22,7 @@ class Idea(models.Model):
     for_votes = models.IntegerField(default=0)
     against_votes = models.IntegerField(default=0)
     links = ArrayField(models.URLField(), blank=True, default=list)
+    deadline = models.DateTimeField(null=True, blank=True)
     unique_name = models.SlugField()
 
     def __str__(self):
